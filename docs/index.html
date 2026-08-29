@@ -103,18 +103,25 @@
       vertical-align: middle;
       text-transform: uppercase;
     }
-    .competitions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+    .marker {
+      display: inline-block;
+      font-family: 'SF Mono', Menlo, monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--lfc-gold);
+      background: #111;
+      border: 1px solid #555;
+      border-radius: 4px;
+      padding: 0.05rem 0.4rem;
+      margin-right: 0.4rem;
+    }
+    .legend {
+      list-style: none;
+      padding: 0;
       margin-top: 0.75rem;
     }
-    .comp-tag {
-      background: #333;
-      color: #ccc;
-      font-size: 0.8rem;
-      padding: 0.25rem 0.65rem;
-      border-radius: 6px;
+    .legend li {
+      margin-bottom: 0.45rem;
     }
     footer {
       margin-top: 2rem;
@@ -159,26 +166,27 @@
 
     <div class="card">
       <h2>What's included <span class="badge">No friendlies</span></h2>
-      <p>All competitive Liverpool FC fixtures for the current season:</p>
-      <div class="competitions">
-        <span class="comp-tag">Premier League</span>
-        <span class="comp-tag">Champions League</span>
-        <span class="comp-tag">Europa League</span>
-        <span class="comp-tag">FA Cup</span>
-        <span class="comp-tag">Carabao Cup</span>
-        <span class="comp-tag">Community Shield</span>
-        <span class="comp-tag">UEFA Super Cup</span>
-        <span class="comp-tag">Club World Cup</span>
-      </div>
+      <p>2026/27 competitive fixtures, with a short marker in each event title:</p>
+      <ul class="legend">
+        <li><span class="marker">PL</span> Premier League</li>
+        <li><span class="marker">UCL</span> Champions League</li>
+        <li><span class="marker">EFL</span> EFL Cup (Carabao Cup)</li>
+        <li><span class="marker">FA</span> FA Cup</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Kick-off not yet confirmed</h2>
+      <p>When a date is known but the time is still TBC (typical Saturday 3pm placeholders, or cup ties before the TV slot), the match appears as an <strong>all-day event</strong> with <em>(kick-off TBC)</em> in the title. It switches to a timed event once the kick-off is confirmed.</p>
     </div>
 
     <div class="card">
       <h2>How it works</h2>
-      <p>A scheduled job runs daily, fetches the latest fixture data from ESPN, and publishes an updated <code>.ics</code> file. Your calendar app picks up changes automatically — new fixtures, rescheduled kick-offs, and results.</p>
+      <p>Fixtures are kept in the project and refreshed from official Liverpool FC, Premier League, and UEFA announcements. A daily job republishes the <code>.ics</code> file. Your calendar app picks up new fixtures, TV time changes, and results on its next refresh.</p>
     </div>
 
     <footer>
-      <p>Built by <a href="https://increlytics.com">increlytics.com</a> · Data from ESPN · <a href="https://github.com/increlytics/lfc-calendar">Source on GitHub</a></p>
+      <p>Built by <a href="https://increlytics.com">increlytics.com</a> · <a href="https://github.com/increlytics/lfc">Source on GitHub</a></p>
     </footer>
 
   </div>
