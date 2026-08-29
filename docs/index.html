@@ -129,9 +129,27 @@
       color: #555;
       font-size: 0.8rem;
     }
-    footer a { color: #777; }
-    a { color: #7fc8f8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      margin-top: 0.85rem;
+      padding: 0.85rem 1rem;
+      background: var(--lfc-red);
+      color: #fff !important;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 8px;
+      text-decoration: none !important;
+      border: none;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .download-btn:hover {
+      filter: brightness(1.08);
+      text-decoration: none !important;
+    }
   </style>
 </head>
 <body>
@@ -152,7 +170,8 @@
       <div class="url-box" id="calUrl" onclick="copyUrl()">
         https://calendar.increlytics.com/lfc.ics
       </div>
-      <p style="color:#888;font-size:0.82rem;">Google Calendar refreshes subscribed feeds roughly every 12-24 hours.</p>
+      <a class="download-btn" href="lfc.ics" download="liverpool-fc.ics">Download calendar file (.ics)</a>
+      <p style="color:#888;font-size:0.82rem;margin-top:0.75rem;">To check it now: download the file, then in Google Calendar go to <strong>Settings → Import &amp; export → Import</strong> and choose that file. A URL subscription can take 12–24 hours to fill in.</p>
     </div>
 
     <div class="card">
