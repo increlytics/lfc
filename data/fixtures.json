@@ -1,7 +1,7 @@
 {
   "season": "2026-27",
   "team": "Liverpool",
-  "updated": "2026-08-29",
+  "updated": "2026-09-03",
   "notes": "Edit this file when TV times, cup draws, or new fixtures are announced. Set time_confirmed to false for kick-off TBC — those become all-day events.",
   "sources": [
     {
@@ -47,7 +47,8 @@
       "kickoff": "12:30",
       "time_confirmed": true,
       "venue": "Anfield",
-      "status": "scheduled"
+      "status": "played",
+      "score": "2-2"
     },
     {
       "id": "pl-md03",
@@ -121,9 +122,9 @@
       "round": "Matchday 8",
       "home": "Liverpool",
       "away": "Brighton & Hove Albion",
-      "date": "2026-10-24",
-      "kickoff": "15:00",
-      "time_confirmed": false,
+      "date": "2026-10-25",
+      "kickoff": "14:00",
+      "time_confirmed": true,
       "venue": "Anfield",
       "status": "scheduled"
     },
@@ -524,9 +525,9 @@
       "round": "Third round",
       "home": "Liverpool",
       "away": "Tottenham Hotspur",
-      "date": "2026-09-16",
+      "date": "2026-09-15",
       "kickoff": "20:00",
-      "time_confirmed": false,
+      "time_confirmed": true,
       "venue": "Anfield",
       "status": "scheduled",
       "note": "Carabao Cup third round. Kick-off may move for TV."

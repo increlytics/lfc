@@ -27,6 +27,7 @@ from zoneinfo import ZoneInfo
 TEAM_ID = "364"
 SPORTSDB_TEAM_ID = "133602"
 LONDON = ZoneInfo("Europe/London")
+EVENT_COLOR = "#DC0714"
 
 ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 SPORTSDB_BASE = "https://www.thesportsdb.com/api/v1/json/3"
@@ -728,6 +729,9 @@ def generate_ics(fixtures: List[dict]) -> str:
         "METHOD:PUBLISH",
         "X-WR-CALNAME:Liverpool FC — All Competitions",
         "X-WR-TIMEZONE:Europe/London",
+        "X-APPLE-CALENDAR-COLOR:{}".format(EVENT_COLOR),
+        "X-OUTLOOK-COLOR:{}".format(EVENT_COLOR),
+        "COLOR:{}".format(EVENT_COLOR),
         "REFRESH-INTERVAL;VALUE=DURATION:PT6H",
         "X-PUBLISHED-TTL:PT6H",
     ]
@@ -771,6 +775,7 @@ def generate_ics(fixtures: List[dict]) -> str:
                 "DESCRIPTION:{}".format(description),
                 "LOCATION:{}".format(location),
                 "CATEGORIES:{}".format(ics_escape(categories)),
+                "COLOR:{}".format(EVENT_COLOR),
                 "TRANSP:TRANSPARENT",
                 "END:VEVENT",
             ]

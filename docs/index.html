@@ -6,7 +6,7 @@
   <title>Liverpool FC Calendar — All Competitions</title>
   <style>
     :root {
-      --lfc-red: #C8102E;
+      --lfc-red: #dc0714;
       --lfc-dark: #1a1a2e;
       --lfc-gold: #F6EB61;
     }
@@ -123,12 +123,24 @@
     .legend li {
       margin-bottom: 0.45rem;
     }
+    .swatch {
+      display: inline-block;
+      width: 0.85rem;
+      height: 0.85rem;
+      background: #dc0714;
+      border-radius: 3px;
+      vertical-align: -0.1rem;
+      margin-right: 0.35rem;
+    }
     footer {
       margin-top: 2rem;
       text-align: center;
       color: #555;
       font-size: 0.8rem;
     }
+    footer a { color: #777; }
+    a { color: #7fc8f8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     .download-btn {
       display: inline-flex;
       align-items: center;
@@ -195,13 +207,25 @@
     </div>
 
     <div class="card">
+      <h2>Calendar colour</h2>
+      <p><span class="swatch"></span>All matches use Liverpool red <code>#dc0714</code>.</p>
+      <p style="margin-top:0.5rem;">Apple Calendar usually picks this up from the file. In Google Calendar a URL subscription uses the colour you choose: click the dots next to the calendar → pick a red (Tomato is closest).</p>
+    </div>
+
+    <div class="card">
       <h2>Kick-off not yet confirmed</h2>
-      <p>When a date is known but the time is still TBC (typical Saturday 3pm placeholders, or cup ties before the TV slot), the match appears as an <strong>all-day event</strong> with <em>(kick-off TBC)</em> in the title. It switches to a timed event once the kick-off is confirmed.</p>
+      <p>When a date is known but the time is still TBC (typical Saturday 3pm placeholders, or cup ties before the TV slot), the match appears as an <strong>all-day event</strong> with <em>(kick-off TBC)</em> in the title. It switches to a timed 2-hour event once the kick-off is confirmed.</p>
+    </div>
+
+    <div class="card">
+      <h2>How times update</h2>
+      <p>A job runs every morning and again in the afternoon (06:00 and 16:00 UTC). It checks Wikipedia and other feeds for TV-confirmed kick-offs. When a time is confirmed, the all-day event becomes an exact UK kick-off (for example 12:30 or 17:45).</p>
+      <p style="margin-top:0.5rem;">That change is on the website after the job finishes. Google Calendar often waits 12–24 hours to refresh a subscribed feed; Apple is usually faster. Download the file again anytime to see the latest times.</p>
     </div>
 
     <div class="card">
       <h2>How it works</h2>
-      <p>Fixtures are kept in the project and refreshed from official Liverpool FC, Premier League, and UEFA announcements. A daily job republishes the <code>.ics</code> file. Your calendar app picks up new fixtures, TV time changes, and results on its next refresh.</p>
+      <p>Fixtures are kept in the project and refreshed from official Liverpool FC, Premier League, and UEFA announcements. The scheduled job republishes the <code>.ics</code> file. Your calendar app picks up new fixtures, TV time changes, and results on its next refresh.</p>
     </div>
 
     <footer>
