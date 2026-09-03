@@ -27,7 +27,7 @@ from zoneinfo import ZoneInfo
 TEAM_ID = "364"
 SPORTSDB_TEAM_ID = "133602"
 LONDON = ZoneInfo("Europe/London")
-EVENT_COLOR = "#DC0714"
+EVENT_COLOR = "#C8102E"
 
 ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 SPORTSDB_BASE = "https://www.thesportsdb.com/api/v1/json/3"
