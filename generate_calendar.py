@@ -583,6 +583,27 @@ def wiki_time_confirmed(kickoff: Optional[str], note: str, score: str, marker: s
     return kickoff != "15:00"
 
 
+def confirm_near_kickoffs(fixtures: List[dict]) -> int:
+    """
+    Premier League Saturday 15:00 is a placeholder until TV picks.
+    If the match was not moved and kick-off is within two weeks, 15:00 is the real time.
+    """
+    today = datetime.now(LONDON).date()
+    locked = 0
+    for fixture in fixtures:
+        if fixture.get("time_confirmed") or fixture.get("status") == "played":
+            continue
+        if fixture.get("marker") != "PL" or fixture.get("kickoff") != "15:00":
+            continue
+        if not fixture.get("date"):
+            continue
+        match_day = datetime.strptime(fixture["date"], "%Y-%m-%d").date()
+        if (match_day - today).days <= 14:
+            fixture["time_confirmed"] = True
+            locked += 1
+    return locked
+
+
 def parse_wikipedia_box(inner: str, competition: str, marker: str) -> Optional[dict]:
     body = inner.split("\n", 1)[1] if "\n" in inner else ""
     fields = parse_template_fields(body)
@@ -815,7 +836,10 @@ def main() -> None:
     print("  TheSportsDB matches: {}".format(len(sportsdb)))
     overlays.extend(sportsdb)
     updated, added = apply_overlays(fixtures, overlays)
+    locked = confirm_near_kickoffs(fixtures)
     print("  Fixtures updated: {}  |  new cup/league ties added: {}".format(updated, added))
+    if locked:
+        print("  Locked Saturday 15:00 kick-offs (within 14 days): {}".format(locked))
 
     save_fixtures(payload, fixtures)
     print("  Wrote {}".format(FIXTURES_FILE))

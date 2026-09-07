@@ -1,7 +1,7 @@
 {
   "season": "2026-27",
   "team": "Liverpool",
-  "updated": "2026-09-03",
+  "updated": "2026-09-07",
   "notes": "Edit this file when TV times, cup draws, or new fixtures are announced. Set time_confirmed to false for kick-off TBC — those become all-day events.",
   "sources": [
     {
@@ -61,7 +61,8 @@
       "kickoff": "20:00",
       "time_confirmed": true,
       "venue": "Portman Road",
-      "status": "scheduled"
+      "status": "played",
+      "score": "0-2"
     },
     {
       "id": "pl-md04",
@@ -72,7 +73,7 @@
       "away": "Fulham",
       "date": "2026-09-12",
       "kickoff": "15:00",
-      "time_confirmed": false,
+      "time_confirmed": true,
       "venue": "Anfield",
       "status": "scheduled"
     },
