@@ -2,9 +2,8 @@ name: Update LFC Calendar
 
 on:
   schedule:
-    # Morning UK + late afternoon (when TV kick-offs are often announced)
+    # Runs daily at 06:00 UTC (early morning UK time)
     - cron: "0 6 * * *"
-    - cron: "0 16 * * *"
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 permissions:
@@ -31,7 +30,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/lfc.ics data/fixtures.json
+          git add docs/lfc.ics
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
