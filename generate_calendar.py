@@ -43,6 +43,22 @@ ESPN_LEAGUES: Dict[str, str] = {
     "fifa.cwc": "Club World Cup",
 }
 
+
+def marker_for_competition(name: str) -> str:
+    """Short calendar tag. Empty when the competition is not one we publish."""
+    text = (name or "").lower()
+    if "champions league" in text:
+        return "UCL"
+    if "europa league" in text or "conference league" in text:
+        return "UEL"
+    if "premier league" in text:
+        return "PL"
+    if "efl cup" in text or "league cup" in text or "carabao" in text:
+        return "EFL"
+    if "fa cup" in text:
+        return "FA"
+    return ""
+
 ROOT = Path(__file__).parent
 FIXTURES_FILE = ROOT / "data" / "fixtures.json"
 OUTPUT_DIR = ROOT / "docs"
@@ -213,15 +229,20 @@ def parse_espn_event(event: dict, league_key: str) -> Optional[dict]:
     state = comp.get("status", {}).get("type", {}).get("state", "pre")
     score_line = ""
     if state == "post":
-        h_val = home.get("score")
-        a_val = away.get("score")
-        if isinstance(h_val, dict):
-            h_val = h_val.get("displayValue") or h_val.get("value")
-        if isinstance(a_val, dict):
-            a_val = a_val.get("displayValue") or a_val.get("value")
+        h_score = home.get("score")
+        a_score = away.get("score")
+        h_val = h_score.get("displayValue") or h_score.get("value") if isinstance(h_score, dict) else h_score
+        a_val = a_score.get("displayValue") or a_score.get("value") if isinstance(a_score, dict) else a_score
         if h_val is not None and a_val is not None:
             score_line = "{}-{}".format(h_val, a_val)
+            h_pens = h_score.get("shootoutScore") if isinstance(h_score, dict) else None
+            a_pens = a_score.get("shootoutScore") if isinstance(a_score, dict) else None
+            if h_pens not in (None, "") and a_pens not in (None, ""):
+                score_line = "{} ({}-{} pens)".format(
+                    score_line, _score_num(h_pens), _score_num(a_pens)
+                )
 
+    competition = ESPN_LEAGUES.get(league_key, league_key)
     return {
         "date": date_str,
         "home": home_name,
@@ -231,7 +252,8 @@ def parse_espn_event(event: dict, league_key: str) -> Optional[dict]:
         "venue": (comp.get("venue") or {}).get("fullName") or "",
         "status": "played" if state == "post" else "scheduled",
         "score": score_line,
-        "competition": ESPN_LEAGUES.get(league_key, league_key),
+        "competition": competition,
+        "marker": marker_for_competition(competition),
         "source": "espn",
     }
 
@@ -286,6 +308,7 @@ def parse_sportsdb_event(ev: dict) -> Optional[dict]:
 
     hs, aws = ev.get("intHomeScore"), ev.get("intAwayScore")
     played = hs not in (None, "") and aws not in (None, "")
+    competition = ev.get("strLeague") or ""
     return {
         "date": date_str,
         "home": home,
@@ -295,7 +318,8 @@ def parse_sportsdb_event(ev: dict) -> Optional[dict]:
         "venue": ev.get("strVenue") or "",
         "status": "played" if played else "scheduled",
         "score": "{}-{}".format(hs, aws) if played else "",
-        "competition": ev.get("strLeague") or "",
+        "competition": competition,
+        "marker": marker_for_competition(competition),
         "source": "sportsdb",
     }
 
@@ -332,41 +356,68 @@ def apply_overlays(fixtures: List[dict], overlays: List[dict]) -> Tuple[int, int
     return updated, added
 
 
+def markers_conflict(fixture: dict, overlay: dict) -> bool:
+    """Cup and league ties against the same club are different matches."""
+    left = fixture.get("marker") or ""
+    right = overlay.get("marker") or ""
+    return bool(left and right and left != right)
+
+
+def same_clubs(fixture: dict, overlay: dict) -> bool:
+    return same_team(fixture.get("home") or "", overlay.get("home") or "") and same_team(
+        fixture.get("away") or "", overlay.get("away") or ""
+    )
+
+
 def find_fixture(fixtures: List[dict], overlay: dict) -> Optional[dict]:
+    """
+    Match an incoming tie to one already on the calendar.
+
+    The same two clubs can meet again in a later cup round (a two-legged
+    semi-final, or a side Liverpool already knocked out). Those are new
+    events. Reuse a fixture only for the same competition and the same round,
+    or for the same clubs on the same date.
+    """
     if overlay.get("date"):
         for fixture in fixtures:
+            if markers_conflict(fixture, overlay):
+                continue
             if match_overlay(fixture, overlay):
                 return fixture
         for fixture in fixtures:
             if fixture.get("date") != overlay["date"]:
                 continue
-            if fixture.get("marker") and overlay.get("marker") and fixture["marker"] != overlay["marker"]:
+            if markers_conflict(fixture, overlay):
                 continue
             if "TBD" in (fixture.get("home"), fixture.get("away")):
                 return fixture
     if overlay.get("marker") and overlay.get("round"):
-        round_l = (overlay.get("round") or "").lower()
+        round_l = (overlay.get("round") or "").strip().lower()
         hits = [
             f
             for f in fixtures
             if f.get("marker") == overlay["marker"]
             and round_l
-            and round_l in (f.get("round") or "").lower()
+            and round_l == (f.get("round") or "").strip().lower()
         ]
-        tbd_hits = [f for f in hits if "TBD" in (f.get("home"), f.get("away"))]
-        if len(tbd_hits) == 1:
-            return tbd_hits[0]
-        if len(hits) == 1:
-            return hits[0]
-    if overlay.get("home") not in (None, "", "TBD") and overlay.get("away") not in (None, "", "TBD"):
-        hits = [
-            f
-            for f in fixtures
-            if same_team(f.get("home") or "", overlay["home"])
-            and same_team(f.get("away") or "", overlay["away"])
-        ]
-        if len(hits) == 1:
-            return hits[0]
+        known = overlay.get("home") not in (None, "", "TBD") and overlay.get("away") not in (
+            None,
+            "",
+            "TBD",
+        )
+        if known:
+            same = [f for f in hits if same_clubs(f, overlay)]
+            if len(same) == 1:
+                return same[0]
+            tbd_hits = [f for f in hits if "TBD" in (f.get("home"), f.get("away"))]
+            if len(tbd_hits) == 1 and not same:
+                return tbd_hits[0]
+        else:
+            tbd_hits = [f for f in hits if "TBD" in (f.get("home"), f.get("away"))]
+            if len(tbd_hits) == 1:
+                return tbd_hits[0]
+            if len(hits) == 1:
+                return hits[0]
     return None
 
 
@@ -399,6 +450,22 @@ def merge_overlay(fixture: dict, overlay: dict) -> bool:
         changed = True
     if overlay.get("round") and not fixture.get("round"):
         fixture["round"] = overlay["round"]
+        changed = True
+    # A draw often lands as "12–13 January" and later becomes one day.
+    # Move the event while kick-off is still unconfirmed.
+    if (
+        overlay.get("date")
+        and fixture.get("date")
+        and overlay["date"] != fixture["date"]
+        and fixture.get("status") != "played"
+        and not fixture.get("time_confirmed")
+    ):
+        fixture["date"] = overlay["date"]
+        changed = True
+    if (fixture.get("note") or "").startswith("Fixture date still a window") and not (
+        overlay.get("note") or ""
+    ).startswith("Fixture date still a window"):
+        fixture["note"] = overlay.get("note") or ""
         changed = True
     return changed
 
@@ -434,6 +501,7 @@ def new_fixture_from_overlay(overlay: dict, fixtures: List[dict]) -> dict:
         "venue": overlay.get("venue") or "",
         "status": overlay.get("status") or "scheduled",
         "score": overlay.get("score") or "",
+        "note": overlay.get("note") or "",
     }
 
 
@@ -490,23 +558,43 @@ def wiki_plain(text: str) -> str:
     return " ".join(text.split()).strip()
 
 
+_MONTH_PATTERN = (
+    r"(January|February|March|April|May|June|July|August|September|October|November|December)"
+)
+
+
+def _iso_date(day: int, month_name: str, year: int) -> str:
+    return "{:04d}-{:02d}-{:02d}".format(year, MONTHS[month_name.lower()], day)
+
+
 def parse_wiki_date(raw: str) -> Optional[str]:
     text = wiki_plain(raw)
     if not text or text in ("TBD", "2026–27", "2026-27"):
         return None
-    if re.search(r"\d+\s*[–-]\s*\d+", text):
+    # "12–13 January 2027" is a window, not a confirmed day.
+    if re.search(r"\d+\s*[–−-]\s*\d+", text):
         return None
     match = re.search(
-        r"(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})",
+        r"(\d{1,2})\s+" + _MONTH_PATTERN + r"\s+(\d{4})",
         text,
         re.I,
     )
     if not match:
         return None
-    day = int(match.group(1))
-    month = MONTHS[match.group(2).lower()]
-    year = int(match.group(3))
-    return "{:04d}-{:02d}-{:02d}".format(year, month, day)
+    return _iso_date(int(match.group(1)), match.group(2), int(match.group(3)))
+
+
+def parse_wiki_date_window(raw: str) -> Optional[str]:
+    """First day of a '12–13 January 2027' window. Kick-off stays unconfirmed."""
+    text = wiki_plain(raw)
+    match = re.search(
+        r"(\d{1,2})\s*[–−-]\s*\d{1,2}\s+" + _MONTH_PATTERN + r"\s+(\d{4})",
+        text,
+        re.I,
+    )
+    if not match:
+        return None
+    return _iso_date(int(match.group(1)), match.group(2), int(match.group(3)))
 
 
 def parse_wiki_time(raw: str) -> Optional[str]:
@@ -516,12 +604,24 @@ def parse_wiki_time(raw: str) -> Optional[str]:
     return "{:02d}:{}".format(int(match.group(1)), match.group(2))
 
 
-def parse_wiki_score(raw: str) -> str:
+def _score_num(value) -> str:
+    text = str(value).strip()
+    if text.endswith(".0"):
+        text = text[:-2]
+    return text
+
+
+def parse_wiki_score(raw: str, pens: str = "") -> str:
     text = wiki_plain(raw).replace("–", "-").replace("−", "-")
     match = re.match(r"(\d+)\s*-\s*(\d+)$", text)
     if not match:
         return ""
-    return "{}-{}".format(match.group(1), match.group(2))
+    line = "{}-{}".format(match.group(1), match.group(2))
+    pens_text = wiki_plain(pens).replace("–", "-").replace("−", "-")
+    pens_match = re.match(r"(\d+)\s*-\s*(\d+)$", pens_text)
+    if pens_match:
+        line = "{} ({}-{} pens)".format(line, pens_match.group(1), pens_match.group(2))
+    return line
 
 
 def parse_template_fields(body: str) -> Dict[str, str]:
@@ -611,18 +711,27 @@ def parse_wikipedia_box(inner: str, competition: str, marker: str) -> Optional[d
     away = wiki_plain(fields.get("team2", ""))
     if not home or not away:
         return None
-    date_str = parse_wiki_date(fields.get("date", ""))
+    date_raw = fields.get("date", "")
+    date_str = parse_wiki_date(date_raw)
+    date_window = False
+    if not date_str:
+        date_str = parse_wiki_date_window(date_raw)
+        date_window = bool(date_str)
     kickoff = parse_wiki_time(fields.get("time", ""))
-    score = parse_wiki_score(fields.get("score", ""))
+    score = parse_wiki_score(fields.get("score", ""), fields.get("penaltyscore", ""))
     venue = wiki_plain(fields.get("stadium", ""))
     note = wiki_plain(fields.get("note", ""))
+    if date_window:
+        window_note = "Fixture date still a window ({}). Kick-off TBC.".format(wiki_plain(date_raw))
+        note = "{} {}".format(window_note, note).strip()
     round_info = wiki_plain(fields.get("round", ""))
+    confirmed = wiki_time_confirmed(kickoff, note, score, marker) and not date_window
     return {
         "date": date_str,
         "home": home,
         "away": away,
         "kickoff": kickoff,
-        "time_confirmed": wiki_time_confirmed(kickoff, note, score, marker),
+        "time_confirmed": confirmed,
         "venue": venue if venue != "TBD" else "",
         "status": "played" if score else "scheduled",
         "score": score,
@@ -631,7 +740,7 @@ def parse_wikipedia_box(inner: str, competition: str, marker: str) -> Optional[d
         "round": round_info,
         "note": note,
         "source": "wikipedia",
-        "force_time": bool(re.search(r"moved|broadcast", note or "", re.I)),
+        "force_time": bool(re.search(r"moved|broadcast", note or "", re.I)) and not date_window,
     }
 
 
